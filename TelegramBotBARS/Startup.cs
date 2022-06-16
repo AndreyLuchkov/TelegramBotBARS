@@ -34,11 +34,22 @@ namespace TelegramBotBARS
         }
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers().AddNewtonsoftJson();
+
             services.AddHostedService<ConfigureWebHook>();
 
             services.AddHttpClient("tgwebhook")
                 .AddTypedClient<ITelegramBotClient>(httpClient
                     => new TelegramBotClient(BotConfig.Token, httpClient));
+
+            services.AddSingleton<ExcelDataProvider>();
+
+            services.AddTransient<CommandExecuteService>();
+
+            services.AddTransient<TGMessageEditService>();
+            services.AddTransient<TGMessageSendService>();
+
+            services.AddScoped<UpdateHandleService>();
         }
     }
 }

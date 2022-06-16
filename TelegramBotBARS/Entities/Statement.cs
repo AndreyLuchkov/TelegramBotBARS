@@ -8,8 +8,8 @@
         public string Teacher { get; set; }
         public float? SemesterScore { get; set; }
         public int? IAScore { get; set; }
-        public string IAType { get; set; }
         public int? TotalScore { get; set; }
+        public string IAType { get; set; }
         
         public Guid StudentId { get; set; }
         public Student Student { get; set; }

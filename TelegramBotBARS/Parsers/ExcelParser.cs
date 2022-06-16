@@ -1,125 +1,129 @@
-﻿using System.Collections.Concurrent;
+﻿using OfficeOpenXml;
 using TelegramBotBARS.Entities;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
+using System.Collections.Concurrent;
 
 namespace TelegramBotBARS.Parsers
 {
     public class ExcelParser : IDisposable
     {
         private const string _excelFilePath = "excel.xlsx";
-        private readonly SpreadsheetDocument _document;
+        private readonly ExcelPackage _package;
 
         public ExcelParser()
         {
-            _document = SpreadsheetDocument.Open(_excelFilePath, false);
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            _package = new ExcelPackage(new FileInfo(_excelFilePath));
         }
 
         public IList<Statement> ParseStatements(Student student)
         {
-            var workboolPart = _document.WorkbookPart!;
-            var sheet = workboolPart.Workbook.Descendants<Sheet>()
+            var statementSheet =
+                _package.Workbook.Worksheets
                 .Where(sheet => sheet.Name == "Успеваемость")
                 .First();
 
-            var sheetPart = (WorksheetPart)workboolPart.GetPartById(sheet.Id!);
-
-            var sheetData = sheetPart.Worksheet.Elements<SheetData>().First();
-
-            var stringTable =
-                _document.WorkbookPart!
-                .GetPartsOfType<SharedStringTablePart>()
-                .FirstOrDefault();
-
             ConcurrentBag<Statement> statements = new();
-            foreach (Row row in sheetData.Elements<Row>().Skip(1))
+            Parallel.For(statementSheet.Dimension.Start.Row + 1, statementSheet.Dimension.End.Row + 1, i =>
             {
-                Parallel.ForEach(row.Elements<Cell>(), cell =>
+                Statement statement = new();
+
+                statement.Student = student;
+                statement.StudentId = student.Id;
+
+                statement.Semester = statementSheet.Cells[$"A{i}"].Value.ToString()!;
+                statement.Discipline = statementSheet.Cells[$"B{i}"].Value.ToString()!;
+                statement.Teacher = statementSheet.Cells[$"C{i}"].Value.ToString()!;
+                statement.Id = new Guid(statementSheet.Cells[$"E{i}"].Value.ToString()!);
+
+                float semesterScore;
+                if (float.TryParse(statementSheet.Cells[$"K{i}"].Value.ToString()!, out semesterScore))
                 {
-                    if (cell != null)
-                    {
-                        var value = cell.CellValue?.InnerText!;
-                        string cellIndex = cell.CellReference?.Value!;
-                        
-                        if (cell.DataType != null)
-                        {
-                            switch (cell.DataType.Value)
-                            {
-                                case CellValues.SharedString:
-                                    if (stringTable != null)
-                                    {
-                                        value = GetCellStringValue(stringTable, value);
-                                        if (value == "NULL")
-                                        {
-                                            value = null;
-                                        }
-                                    }
-                                    break;
-                            }
-                        }
+                    statement.SemesterScore = semesterScore;
+                } 
+                else
+                {
+                    statement.SemesterScore = null;
+                }
 
-                        Statement statement = new();
-                        switch (cellIndex[0])
-                        {
-                            case 'A':
-                                statement.Semester = value!;
-                                break;
-                            case 'B':
-                                statement.Discipline = value!;
-                                break;
-                            case 'C':
-                                statement.Teacher = value!;
-                                break;
-                            case 'E':
-                                statement.Id = new Guid(value!);
-                                break;
-                            case 'J':
-                                break;
-                            case 'L':
-                                if (value is null)
-                                {
-                                    statement.IAScore = null;
-                                }
-                                else
-                                {
-                                    int IAScore;
-                                    int.TryParse(value, out IAScore);
-                                    statement.IAScore = IAScore;
-                                }
-                                break;
-                            case 'M':
-                                if (value is null)
-                                {
-                                    statement.TotalScore = null;
-                                } 
-                                else
-                                {
-                                    int totalScore;
-                                    int.TryParse(value, out totalScore);
-                                    statement.TotalScore = totalScore;
-                                }
-                                break;
-                            case 'N':
-                                statement.IAType = value!;
-                                break;
+                int IAScore;
+                if (int.TryParse(statementSheet.Cells[$"L{i}"].Value.ToString()!, out IAScore))
+                {
+                    statement.IAScore = IAScore;
+                }
+                else
+                {
+                    statement.IAScore = null;
+                }
 
-                        }
-                        statements.Add(statement);
-                    }
-                });
-            }
+                int totalScore;
+                if (int.TryParse(statementSheet.Cells[$"M{i}"].Value.ToString()!, out totalScore))
+                {
+                    statement.TotalScore = totalScore;
+                }
+                else
+                {
+                    statement.TotalScore = null;
+                }
+                
+                statement.IAType = statementSheet.Cells[$"N{i}"].Value.ToString()!;
+
+                statements.Add(statement);
+            });
+
             return statements.ToList();
         }
-        private string GetCellStringValue(SharedStringTablePart stringTable, string value) 
-            => stringTable.SharedStringTable
-                .ElementAt(int.Parse(value)).InnerText;
-        public IList<ControlEvent> ParseControlEvents(IList<Statement> statements)
+        public void ParseControlEvents(IList<Statement> statements)
         {
-            throw new NotImplementedException();
+            var controlEventSheet =
+                _package.Workbook.Worksheets
+                .Where(sheet => sheet.Name == "КМ по всем ведомостям и оценки")
+                .First();
+
+            ConcurrentDictionary<Guid, ConcurrentBag<ControlEvent>> controlEvents = new();
+
+            foreach (var statement in statements)
+            {
+                controlEvents.TryAdd(statement.Id, new());
+            }
+
+            Parallel.For(controlEventSheet.Dimension.Start.Row + 1, controlEventSheet.Dimension.End.Row + 1, i =>
+            {
+                ControlEvent controlEvent = new();
+
+                controlEvent.StatementId = new Guid(controlEventSheet.Cells[$"A{i}"].Value.ToString()!);
+                controlEvent.WeekNumber = int.Parse(controlEventSheet.Cells[$"C{i}"].Value.ToString()!);
+                controlEvent.Number = int.Parse(controlEventSheet.Cells[$"E{i}"].Value.ToString()!);
+                controlEvent.Name = controlEventSheet.Cells[$"F{i}"].Value.ToString()!;
+                controlEvent.Weight = int.Parse(controlEventSheet.Cells[$"G{i}"].Value.ToString()!);
+                
+                int score;
+                if (int.TryParse(controlEventSheet.Cells[$"H{i}"].Value.ToString()!, out score))
+                {
+                    controlEvent.Score = score;
+                }
+                else
+                {
+                    controlEvent.Score = null;
+                }
+
+                controlEvent.ScoreStatus = controlEventSheet.Cells[$"J{i}"].Value.ToString()! switch
+                {
+                    "учитывается в итоговом балле" => ScoreStatus.Ok,
+                    "пересдана из-за низкого результата" => ScoreStatus.Retake,
+                    _ => ScoreStatus.Bad
+                };
+
+                controlEvents[controlEvent.StatementId].Add(controlEvent);
+            });
+
+            foreach (var statement in statements)
+            {
+                statement.ControlEvents.AddRange(controlEvents[statement.Id].ToList());
+            }
         }
         public void Dispose()
         {
-            _document.Dispose();
+            _package.Dispose();
         }
     }
 }
