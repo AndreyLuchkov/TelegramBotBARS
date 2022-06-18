@@ -28,6 +28,13 @@ namespace TelegramBotBARS.Commands
         {
             var buttonRows = new List<InlineKeyboardButton[]>();
 
+            var optionsParams = options.Split('&');
+            string from = optionsParams
+                .Where(param => param.Contains("from"))
+                .FirstOrDefault("/km")
+                .Split('=')
+                .Last();
+
             var semesters = _dataProvider.GetStatements()
                 .Select(s => s.Semester)
                 .Distinct()
@@ -36,7 +43,7 @@ namespace TelegramBotBARS.Commands
 
             foreach (var semester in semesters)
             {
-                buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData(semester, $"/km?sem={semester}") });
+                buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData(semester, $"{from}?sem={semester}") });
             }
 
             return new ExecuteResult

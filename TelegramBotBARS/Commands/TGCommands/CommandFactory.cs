@@ -10,6 +10,7 @@
             _commands["/km"] = () => new KmCommand();
             _commands[";statement"] = () => new StatementCommand();
             _commands[";semester"] = () => new SemesterCommand();
+            _commands["/miss"] = () => new MissCommand();
         }
         public bool IsCommandExist(string commandName) => _commands.ContainsKey(commandName);
         public ICommand GetCommand(string commandName)

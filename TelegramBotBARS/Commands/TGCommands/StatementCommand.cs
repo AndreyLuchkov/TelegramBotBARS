@@ -36,7 +36,7 @@ namespace TelegramBotBARS.Commands
 
             string message = $"<b>{statement.Discipline}</b>\n({teacher}, {statement.IAType})\n"
                 + "------------------------------------------\n"
-                + GetControlEventTable(statement);
+                + ControlEventsToString(statement);
 
             return new ExecuteResult
             {
@@ -45,19 +45,19 @@ namespace TelegramBotBARS.Commands
                 Result = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("<<< Назад", $"/km?sem={statement.Semester}&iatype={String.Join("", statement.IAType.Take(3))}"))
             };
         }
-        private string GetControlEventTable(Statement statement)
+        private string ControlEventsToString(Statement statement)
         {
-            StringBuilder table = new StringBuilder();
+            StringBuilder controlEvents = new StringBuilder();
 
             foreach (var ce in statement.ControlEvents.OrderBy(ce => ce.Number))
             {
-                table.AppendLine($"{ce.Number}. {ce.Name}")
+                controlEvents.AppendLine($"{ce.Number}. {ce.Name}")
                      .AppendLine($"Неделя проведения: {ce.WeekNumber}")
                      .AppendLine($"<b>Оценка: {ce.Score}</b>")
                      .AppendLine("------------------------------------------");
             }
 
-            return table.ToString();
+            return controlEvents.ToString();
         }
     }
 }

@@ -15,5 +15,6 @@
         public Student Student { get; set; }
 
         public List<ControlEvent> ControlEvents { get; set; } = new();
+        public List<MissedLessonRecord> MissedLessonRecords { get; set; } = new();
     }
 }

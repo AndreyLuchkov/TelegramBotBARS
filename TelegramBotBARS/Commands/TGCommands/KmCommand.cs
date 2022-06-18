@@ -18,7 +18,6 @@ namespace TelegramBotBARS.Commands
             };
         }
 
-        
         public void AddService(object service)
         {
             if (service is ExcelDataProvider dataProvider)
@@ -50,8 +49,8 @@ namespace TelegramBotBARS.Commands
                 buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData($"{statement.Discipline}", $";statement?{statement.Id}") });
             }
 
-            SetSortButtons(buttonRows, IAType, semester);
-            SetSemesterChangeButton(buttonRows);
+            AddSortButtons(buttonRows, IAType, semester);
+            AddSemesterChangeButton(buttonRows);
 
             return new ExecuteResult
             {
@@ -60,7 +59,20 @@ namespace TelegramBotBARS.Commands
                 Result = new InlineKeyboardMarkup(buttonRows)
             };
         }
-        private void SetSortButtons(List<InlineKeyboardButton[]> buttonRows, string IAType, string semester)
+        private string GetDefaultSemester()
+        {
+            DateTime currDate = DateTime.Now;
+
+            if (currDate.Month > 8 || currDate.Month < 2)
+            {
+                return $"{currDate.Year}/{currDate.Year + 1}, Осенний семестр";
+            }
+            else
+            {
+                return $"{currDate.Year - 1}/{currDate.Year}, Весенний семестр";
+            }
+        }
+        private void AddSortButtons(List<InlineKeyboardButton[]> buttonRows, string IAType, string semester)
         {
             switch (IAType)
             {
@@ -88,22 +100,9 @@ namespace TelegramBotBARS.Commands
 
             }
         }
-        private void SetSemesterChangeButton(List<InlineKeyboardButton[]> buttonRows)
+        private void AddSemesterChangeButton(List<InlineKeyboardButton[]> buttonRows)
         {
             buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData("Выбрать семестр", ";semester") });
-        }
-        private string GetDefaultSemester()
-        {
-            DateTime currDate = DateTime.Now;
-
-            if (currDate.Month > 8 || currDate.Month < 2)
-            {
-                return $"{currDate.Year}/{currDate.Year + 1}, Осенний семестр";
-            }
-            else
-            {
-                return $"{currDate.Year - 1}/{currDate.Year}, Весенний семестр";
-            }
         }
     }
 }

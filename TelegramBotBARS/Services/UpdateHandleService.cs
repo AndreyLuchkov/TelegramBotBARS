@@ -48,7 +48,7 @@ namespace TelegramBotBARS.Services
         {
             var words = text.Split(' ');
 
-            return (words.First()[0] == '/' || words.First()[0] == ';') && words.Count() == 1;
+            return words.First()[0] == '/' && words.Count() == 1;
         }
         private async Task HandleCallbackQuery(Update update)
         {

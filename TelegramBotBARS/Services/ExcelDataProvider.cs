@@ -22,7 +22,30 @@ namespace TelegramBotBARS.Services
                 Login = "LuchkovAD"
             });
 
-            excelParser.ParseControlEvents(statements);
+            var controlEvents = excelParser.ParseControlEvents();
+
+            foreach (var s in statements)
+            {
+                s.ControlEvents.AddRange(
+                    controlEvents
+                    .Where(ce => ce.StatementId == s.Id)
+                    .ToList());
+            }
+
+            var missedLessonRecords = excelParser.ParseMissedLessonRecords();
+
+            foreach (var s in statements)
+            {
+                var records = missedLessonRecords
+                    .Where(ce => ce.StatementId == s.Id);
+
+                foreach (var record in records)
+                {
+                    record.Statement = s;
+                }
+
+                s.MissedLessonRecords.AddRange(records.ToList());
+            }
 
             _cachedStatements = statements;
 

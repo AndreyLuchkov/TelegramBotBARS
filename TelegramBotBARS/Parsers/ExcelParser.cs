@@ -72,20 +72,14 @@ namespace TelegramBotBARS.Parsers
 
             return statements.ToList();
         }
-        public void ParseControlEvents(IList<Statement> statements)
+        public IList<ControlEvent> ParseControlEvents()
         {
             var controlEventSheet =
                 _package.Workbook.Worksheets
                 .Where(sheet => sheet.Name == "КМ по всем ведомостям и оценки")
                 .First();
 
-            ConcurrentDictionary<Guid, ConcurrentBag<ControlEvent>> controlEvents = new();
-
-            foreach (var statement in statements)
-            {
-                controlEvents.TryAdd(statement.Id, new());
-            }
-
+            ConcurrentBag<ControlEvent> controlEvents = new();
             Parallel.For(controlEventSheet.Dimension.Start.Row + 1, controlEventSheet.Dimension.End.Row + 1, i =>
             {
                 ControlEvent controlEvent = new();
@@ -113,13 +107,38 @@ namespace TelegramBotBARS.Parsers
                     _ => ScoreStatus.Bad
                 };
 
-                controlEvents[controlEvent.StatementId].Add(controlEvent);
+                controlEvents.Add(controlEvent);
             });
 
-            foreach (var statement in statements)
+            return controlEvents.ToList();
+        }
+        public IList<MissedLessonRecord> ParseMissedLessonRecords()
+        {
+            var sheet =
+                 _package.Workbook.Worksheets
+                .Where(sheet => sheet.Name == "Посещаемость")
+                .First();
+
+            ConcurrentBag<MissedLessonRecord> records = new();
+            Parallel.For(sheet.Dimension.Start.Row + 1, sheet.Dimension.End.Row + 1, i =>
             {
-                statement.ControlEvents.AddRange(controlEvents[statement.Id].ToList());
-            }
+                MissedLessonRecord record = new();
+
+                string guid = sheet.Cells[$"B{i}"].Value.ToString()!;
+                if (guid != "NULL")
+                {
+                    record.StatementId = new Guid(guid);
+                }
+                
+                record.LessonType = sheet.Cells[$"E{i}"].Value.ToString()!;
+                record.LessonDate = DateTime.Parse(sheet.Cells[$"F{i}"].Value.ToString()!);
+                record.LessonTime = sheet.Cells[$"G{i}"].Value.ToString()!;
+                record.Reason = sheet.Cells[$"H{i}"].Value.ToString()!;
+
+                records.Add(record);
+            });
+
+            return records.ToList();
         }
         public void Dispose()
         {
