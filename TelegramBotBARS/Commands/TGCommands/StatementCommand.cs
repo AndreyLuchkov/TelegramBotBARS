@@ -28,7 +28,8 @@ namespace TelegramBotBARS.Commands
         }
         public ExecuteResult Execute(string options)
         {
-            var statement = _dataProvider.GetStatements()
+            var statement = 
+                _dataProvider.GetStatements()
                 .Where(s => s.Id == new Guid(options))
                 .First();
 
@@ -47,17 +48,41 @@ namespace TelegramBotBARS.Commands
         }
         private string ControlEventsToString(Statement statement)
         {
-            StringBuilder controlEvents = new StringBuilder();
+            StringBuilder controlEventsStr = new StringBuilder();
 
-            foreach (var ce in statement.ControlEvents.OrderBy(ce => ce.Number))
+            var oldScoreEvents =
+                statement.ControlEvents
+                .Where(ce => ce.ScoreStatus == ScoreStatus.Retake)
+                .GroupBy(ce => ce.Name)
+                .Select(group
+                    => group
+                        .OrderByDescending(ce => ce.RateDate)
+                        .First());
+
+            foreach (var ce in statement.ControlEvents
+                                .OrderBy(ce => ce.Number)
+                                .Where(ce => ce.ScoreStatus == ScoreStatus.Ok))
             {
-                controlEvents.AppendLine($"{ce.Number}. {ce.Name}")
-                     .AppendLine($"Неделя проведения: {ce.WeekNumber}")
-                     .AppendLine($"<b>Оценка: {ce.Score}</b>")
-                     .AppendLine("------------------------------------------");
+                controlEventsStr
+                    .AppendLine($"{ce.Number}. {ce.Name}")
+                    .AppendLine($"Неделя проведения: {ce.WeekNumber}");
+
+                ControlEvent? oldScoreEvent = oldScoreEvents
+                    .Where(e => e.Name == ce.Name)
+                    .FirstOrDefault();
+                if (oldScoreEvent != null)
+                {
+                    controlEventsStr.AppendLine($"<b>Оценка: {ce.Score}</b> <i>(Пересдана: {oldScoreEvent.Score})</i>");
+                }
+                else
+                {
+                    controlEventsStr.AppendLine($"<b>Оценка: {ce.Score}</b>");
+                }
+
+                controlEventsStr.AppendLine("------------------------------------------");
             }
 
-            return controlEvents.ToString();
+            return controlEventsStr.ToString();
         }
     }
 }

@@ -3,7 +3,7 @@
     public class MissedLessonRecord
     {
         public Guid StatementId { get; set; }
-        public Statement Statement { get; set; }
+        public Statement Statement { get; set; } = null!;
 
         public string LessonType { get; set; }
         public DateTime LessonDate { get; set; }

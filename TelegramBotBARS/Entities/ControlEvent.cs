@@ -14,9 +14,10 @@
         public int WeekNumber { get; set; }
         public int Weight { get; set; }
         public int? Score { get; set; }
+        public DateTime RateDate { get; set; }
         public ScoreStatus ScoreStatus { get; set; }
 
         public Guid StatementId { get; set; }
-        public Statement Statement { get; set; }
+        public Statement Statement { get; set; } = null!;
     }
 }

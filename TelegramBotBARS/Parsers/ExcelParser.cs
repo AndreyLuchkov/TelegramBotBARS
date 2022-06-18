@@ -100,6 +100,7 @@ namespace TelegramBotBARS.Parsers
                     controlEvent.Score = null;
                 }
 
+                controlEvent.RateDate = DateTime.Parse(controlEventSheet.Cells[$"I{i}"].Value.ToString()!);
                 controlEvent.ScoreStatus = controlEventSheet.Cells[$"J{i}"].Value.ToString()! switch
                 {
                     "учитывается в итоговом балле" => ScoreStatus.Ok,

@@ -12,7 +12,7 @@
         public string IAType { get; set; }
         
         public Guid StudentId { get; set; }
-        public Student Student { get; set; }
+        public Student Student { get; set; } = null!;
 
         public List<ControlEvent> ControlEvents { get; set; } = new();
         public List<MissedLessonRecord> MissedLessonRecords { get; set; } = new();
