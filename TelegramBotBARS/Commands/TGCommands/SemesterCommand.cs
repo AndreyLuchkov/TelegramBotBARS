@@ -3,28 +3,9 @@ using TelegramBotBARS.Services;
 
 namespace TelegramBotBARS.Commands
 {
-    public class SemesterCommand : IServiceRequiredCommand
+    public class SemesterCommand : ExcelDataCommand
     {
-        private ExcelDataProvider _dataProvider = null!;
-
-        public IEnumerable<Type> RequiredServicesTypes { get; }
-
-        public SemesterCommand()
-        {
-            RequiredServicesTypes = new List<Type>
-            {
-                typeof(ExcelDataProvider),
-            };
-        }
-
-        public void AddService(object service)
-        {
-            if (service is ExcelDataProvider dataProvider)
-            {
-                _dataProvider = dataProvider;
-            }
-        }
-        public ExecuteResult Execute(string options)
+        public override ExecuteResult Execute(string options)
         {
             var buttonRows = new List<InlineKeyboardButton[]>();
 
@@ -47,7 +28,7 @@ namespace TelegramBotBARS.Commands
 
             foreach (var semester in semesters)
             {
-                buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData(semester, $"{from}?sem={semester}") });
+                buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData(semester, $"{from}?sem={semester.Substring(0, 12)}") });
             }
 
             return new ExecuteResult

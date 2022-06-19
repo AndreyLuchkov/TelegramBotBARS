@@ -1,32 +1,12 @@
 ﻿using System.Text;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotBARS.Entities;
-using TelegramBotBARS.Services;
 
 namespace TelegramBotBARS.Commands
 {
-    public class MissCommand : IServiceRequiredCommand
+    public class MissCommand : ExcelDataCommand
     {
-        private ExcelDataProvider _dataProvider = null!;
-
-        public IEnumerable<Type> RequiredServicesTypes { get; }
-
-        public MissCommand()
-        {
-            RequiredServicesTypes = new List<Type>
-            {
-                typeof(ExcelDataProvider),
-            };
-        }
-
-        public void AddService(object service)
-        {
-            if (service is ExcelDataProvider dataProvider)
-            {
-                _dataProvider = dataProvider;
-            }
-        }
-        public ExecuteResult Execute(string options)
+        public override ExecuteResult Execute(string options)
         {
             var optionsParams = options.Split('&');
             string semester = optionsParams
@@ -43,19 +23,19 @@ namespace TelegramBotBARS.Commands
 
             var missedLessonRecords =
                 _dataProvider.GetStatements()
-                .Where(s => s.Semester == semester)
+                .Where(s => s.Semester.Contains(semester))
                 .SelectMany(s => s.MissedLessonRecords)
                 .OrderByDescending(record => record.LessonDate);
 
             int pageCount = (int)Math.Ceiling(missedLessonRecords.Count() / 5.0);
 
-            string message =
-                $"Семестр: <b>{semester}</b>\n" 
-                + "------------------------------------------\n"
-                + RecordsToString(
-                    missedLessonRecords
-                    .Skip((page - 1) * 5)
-                    .Take(5));
+            StringBuilder message = new($"<b>{GetSemesterFullName(semester)}</b>\n");
+
+            message
+                .AppendLine("------------------------------------------")
+                .AppendLine(RecordsToString(missedLessonRecords
+                                                .Skip((page - 1) * 5)
+                                                .Take(5)));
 
             var buttonRows = new List<InlineKeyboardButton[]>();
             AddPageSwitchButtons(buttonRows, page, semester, pageCount);
@@ -64,7 +44,7 @@ namespace TelegramBotBARS.Commands
             return new ExecuteResult
             {
                 ResultType = ResultType.InlineKeyboardWithCallback,
-                Message = message,
+                Message = message.ToString(),
                 Result = new InlineKeyboardMarkup(buttonRows)
             };
         }
@@ -74,11 +54,11 @@ namespace TelegramBotBARS.Commands
 
             if (currDate.Month > 8 || currDate.Month < 2)
             {
-                return $"{currDate.Year}/{currDate.Year + 1}, Осенний семестр";
+                return $"{currDate.Year}/{currDate.Year + 1}, О";
             }
             else
             {
-                return $"{currDate.Year - 1}/{currDate.Year}, Весенний семестр";
+                return $"{currDate.Year - 1}/{currDate.Year}, В";
             }
         }
         private string RecordsToString(IEnumerable<MissedLessonRecord> records)
@@ -100,6 +80,12 @@ namespace TelegramBotBARS.Commands
             }
 
             return recordsStr.ToString();
+        }
+        private string GetSemesterFullName(string semester)
+        {
+            return semester.Last() == 'В'
+                ? semester + "есенний семестр"
+                : semester + "сенний семестр";
         }
         private void AddPageSwitchButtons(List<InlineKeyboardButton[]> buttonRows, int page, string semester, int pageCount)
         {

@@ -1,8 +1,10 @@
-﻿using Telegram.Bot.Types.ReplyMarkups;
+﻿using System.Text;
+using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBotBARS.Entities;
 
 namespace TelegramBotBARS.Commands
 {
-    public class KmCommand : ExcelDataCommand
+    public class ResultsCommand : ExcelDataCommand
     {
         public override ExecuteResult Execute(string options)
         {
@@ -19,22 +21,23 @@ namespace TelegramBotBARS.Commands
                 .Last();
 
             var statements = _dataProvider.GetStatements()
-                .Where(s => s.Semester.Contains(semester))
-                .Where(s => s.IAType.Contains(IAType));
+               .Where(s => s.Semester.Contains(semester))
+               .Where(s => s.IAType.Contains(IAType));
 
-            var buttonRows = new List<InlineKeyboardButton[]>(statements.Count());
-            foreach (var statement in statements)
-            {
-                buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData($"{statement.Discipline}", $";statement?{statement.Id}") });
-            }
-
+            var buttonRows = new List<InlineKeyboardButton[]>();
             AddSortButtons(buttonRows, IAType, semester);
             AddSemesterChangeButton(buttonRows);
+
+            StringBuilder message = new($"Семестр: <b>{GetSemesterFullName(semester)}</b>\n");
+
+            message
+                .AppendLine("------------------------------------------")
+                .AppendLine(StatementsToString(statements));
 
             return new ExecuteResult
             {
                 ResultType = ResultType.InlineKeyboardWithCallback,
-                Message = $"<b>{GetSemesterFullName(semester)}</b>\nВыберите предмет, по которому хотите посмотреть оценки.\n",
+                Message = message.ToString(),
                 Result = new InlineKeyboardMarkup(buttonRows)
             };
         }
@@ -58,36 +61,49 @@ namespace TelegramBotBARS.Commands
                 case "экз":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&iaT=защ"),
-                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&iaT=зач"),
+                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/results?sem={semester}&iaT=защ"),
+                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/results?sem={semester}&iaT=зач"),
                     });
                     break;
                 case "защ":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Экзамен", $"/km?sem={semester}&iaT=экз"),
-                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&iaT=зач"),
+                        InlineKeyboardButton.WithCallbackData("<<< Экзамен", $"/results?sem={semester}&iaT=экз"),
+                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/results?sem={semester}&iaT=зач"),
                     });
                     break;
                 case "зач":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&iaT=защ"),
-                        InlineKeyboardButton.WithCallbackData("Экзамен >>>", $"/km?sem={semester}&iaT=экз"),
+                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/results?sem={semester}&iaT=защ"),
+                        InlineKeyboardButton.WithCallbackData("Экзамен >>>", $"/results?sem={semester}&iaT=экз"),
                     });
                     break;
-
             }
         }
         private void AddSemesterChangeButton(List<InlineKeyboardButton[]> buttonRows)
         {
-            buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData("Выбрать семестр", ";semester") });
+            buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData("Выбрать семестр", ";semester?from=/results") });
         }
         private string GetSemesterFullName(string semester)
         {
             return semester.Last() == 'В'
                 ? semester + "есенний семестр"
                 : semester + "сенний семестр";
+        }
+        private string StatementsToString(IEnumerable<Statement> statements)
+        {
+            StringBuilder statementsStr = new();
+
+            foreach (var s in statements)
+            {
+                statementsStr
+                    .AppendLine($"<b>{s.Discipline}</b>")
+                    .AppendLine($"<i>Промежуточная аттестация: {s.IAScore}</i>")
+                    .AppendLine("------------------------------------------");
+            }
+
+            return statementsStr.ToString();
         }
     }
 }

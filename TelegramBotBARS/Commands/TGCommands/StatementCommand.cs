@@ -5,28 +5,9 @@ using TelegramBotBARS.Services;
 
 namespace TelegramBotBARS.Commands
 {
-    public class StatementCommand : IServiceRequiredCommand
+    public class StatementCommand : ExcelDataCommand
     {
-        private ExcelDataProvider _dataProvider = null!;
-
-        public IEnumerable<Type> RequiredServicesTypes { get; }
-
-        public StatementCommand()
-        {
-            RequiredServicesTypes = new List<Type>
-            {
-                typeof(ExcelDataProvider),
-            };
-        }
-
-        public void AddService(object service)
-        {
-            if (service is ExcelDataProvider dataProvider)
-            {
-                _dataProvider = dataProvider;
-            }
-        }
-        public ExecuteResult Execute(string options)
+        public override ExecuteResult Execute(string options)
         {
             var statement = 
                 _dataProvider.GetStatements()
@@ -35,15 +16,17 @@ namespace TelegramBotBARS.Commands
 
             string teacher = $"{statement.Teacher.Split(' ').First()}  {String.Join("", statement.Teacher.Split(' ').Skip(1).Select(s => $"{s[0]}."))}";
 
-            string message = $"<b>{statement.Discipline}</b>\n({teacher}, {statement.IAType})\n"
-                + "------------------------------------------\n"
-                + ControlEventsToString(statement);
+            StringBuilder message = new($"<b>{statement.Discipline}</b>\n({teacher}, {statement.IAType})\n");
+           
+            message
+                .AppendLine("------------------------------------------")
+                .AppendLine(ControlEventsToString(statement));
 
             return new ExecuteResult
             {
                 ResultType = ResultType.InlineKeyboardWithCallback,
-                Message = message,
-                Result = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("<<< Назад", $"/km?sem={statement.Semester}&iatype={String.Join("", statement.IAType.Take(3))}"))
+                Message = message.ToString(),
+                Result = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("<<< Назад", $"/km?sem={statement.Semester.Substring(0, 12)}&iaT={String.Join("", statement.IAType.Take(3))}"))
             };
         }
         private string ControlEventsToString(Statement statement)

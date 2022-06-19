@@ -11,6 +11,7 @@
             _commands[";statement"] = () => new StatementCommand();
             _commands[";semester"] = () => new SemesterCommand();
             _commands["/miss"] = () => new MissCommand();
+            _commands["/results"] = () => new ResultsCommand();
         }
         public bool IsCommandExist(string commandName) => _commands.ContainsKey(commandName);
         public ICommand GetCommand(string commandName)
