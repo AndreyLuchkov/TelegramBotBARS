@@ -38,7 +38,11 @@ namespace TelegramBotBARS.Commands
             var semesters = _dataProvider.GetStatements()
                 .Select(s => s.Semester)
                 .Distinct()
-                .OrderByDescending(sem => sem);
+                .GroupBy(sem 
+                    => sem.Split(',').First())
+                .OrderByDescending(group => group.Key)
+                .SelectMany(group 
+                    => group.OrderBy(value => value));
                 
 
             foreach (var semester in semesters)
