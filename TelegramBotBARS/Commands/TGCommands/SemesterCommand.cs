@@ -1,11 +1,10 @@
 ﻿using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBotBARS.Services;
 
 namespace TelegramBotBARS.Commands
 {
-    public class SemesterCommand : ExcelDataCommand
+    public class SemesterCommand : WebApiDataCommand
     {
-        public override ExecuteResult Execute(string options)
+        public override async Task<ExecuteResult> ExecuteAsync(string options)
         {
             var buttonRows = new List<InlineKeyboardButton[]>();
 
@@ -16,7 +15,8 @@ namespace TelegramBotBARS.Commands
                 .Split('=')
                 .Last();
 
-            var semesters = _dataProvider.GetStatements()
+            var semesters = 
+                (await _dataProvider.GetStatements())
                 .Select(s => s.Semester)
                 .Distinct()
                 .GroupBy(sem 

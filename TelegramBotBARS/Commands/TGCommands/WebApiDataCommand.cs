@@ -2,27 +2,27 @@
 
 namespace TelegramBotBARS.Commands
 {
-    public abstract class ExcelDataCommand : IServiceRequiredCommand
+    public abstract class WebApiDataCommand : IServiceRequiredCommand
     {
-        protected ExcelDataProvider _dataProvider = null!;
+        protected WebApiDataProvider _dataProvider = null!;
 
         public IEnumerable<Type> RequiredServicesTypes { get; }
 
-        public ExcelDataCommand()
+        public WebApiDataCommand()
         {
             RequiredServicesTypes = new List<Type>
             {
-                typeof(ExcelDataProvider),
+                typeof(WebApiDataProvider),
             };
         }
 
         public void AddService(object service)
         {
-            if (service is ExcelDataProvider dataProvider)
+            if (service is WebApiDataProvider dataProvider)
             {
                 _dataProvider = dataProvider;
             }
         }
-        public abstract ExecuteResult Execute(string options);
+        public abstract Task<ExecuteResult> ExecuteAsync(string options);
     }
 }

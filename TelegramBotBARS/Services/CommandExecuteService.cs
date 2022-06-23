@@ -13,7 +13,7 @@ namespace TelegramBotBARS.Services
             _services = services;
         }
 
-        public ExecuteResult ExecuteCommand(string commandName, string options)
+        public async Task<ExecuteResult> ExecuteCommandAsync(string commandName, string options)
         {
             if (_commandFactory.IsCommandExist(commandName))
             {
@@ -24,7 +24,7 @@ namespace TelegramBotBARS.Services
                     AddRequiredServices(serviceRequiredCommand);
                 }
 
-                return command.Execute(options);
+                return await command.ExecuteAsync(options);
             }
             else
             {

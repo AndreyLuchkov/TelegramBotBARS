@@ -35,11 +35,11 @@ namespace TelegramBotBARS.Services
             ExecuteResult result;
             if (IsCommand(text))
             {
-                result = _commandExecuteService.ExecuteCommand(text.Split(' ').First(), String.Empty);
+                result = await _commandExecuteService.ExecuteCommandAsync(text.Split(' ').First(), String.Empty);
             } 
             else
             {
-                result = _commandExecuteService.ExecuteCommand("/start", String.Empty);
+                result = await _commandExecuteService.ExecuteCommandAsync("/start", String.Empty);
             }
 
             await _messageSendService.SendMessageAsync(message.Chat.Id, result);
@@ -60,7 +60,7 @@ namespace TelegramBotBARS.Services
             string commandName = callbackText.Split('?').First();
             string options = callbackText.Split('?').Last();
 
-            result = _commandExecuteService.ExecuteCommand(commandName, options);
+            result = await _commandExecuteService.ExecuteCommandAsync(commandName, options);
 
             await _messageEditService.EditMessageAsync(callbackQuery.Message!, result);
         }

@@ -1,50 +1,48 @@
 ﻿using System.Text;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotBARS.Entities;
-using TelegramBotBARS.Services;
 
 namespace TelegramBotBARS.Commands
 {
-    public class StatementCommand : ExcelDataCommand
+    public class StatementCommand : WebApiDataCommand
     {
-        public override ExecuteResult Execute(string options)
+        public override async Task<ExecuteResult> ExecuteAsync(string options)
         {
-            var statement = 
-                _dataProvider.GetStatements()
-                .Where(s => s.Id == new Guid(options))
-                .First();
+            var statement = await _dataProvider.GetStatement(new Guid(options));
 
             string teacher = $"{statement.Teacher.Split(' ').First()}  {String.Join("", statement.Teacher.Split(' ').Skip(1).Select(s => $"{s[0]}."))}";
 
-            StringBuilder message = new($"<b>{statement.Discipline}</b>\n({teacher}, {statement.IAType})\n");
+            StringBuilder message = new($"<b>{statement.Discipline}</b>\n({teacher}, {statement.AttestationType})\n");
            
             message
                 .AppendLine("------------------------------------------")
-                .AppendLine(ControlEventsToString(statement));
+                .AppendLine(await ControlEventsToString(statement));
 
             return new ExecuteResult
             {
                 ResultType = ResultType.InlineKeyboardWithCallback,
                 Message = message.ToString(),
-                Result = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("<<< Назад", $"/km?sem={statement.Semester.Substring(0, 12)}&iaT={String.Join("", statement.IAType.Take(3))}"))
+                Result = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("<<< Назад", $"/km?sem={statement.Semester.Substring(0, 12)}&type={statement.AttestationType.Substring(0, 3)}"))
             };
         }
-        private string ControlEventsToString(Statement statement)
+        private async Task<string> ControlEventsToString(Statement statement)
         {
             StringBuilder controlEventsStr = new StringBuilder();
 
+            var controlEvents = await _dataProvider.GetControlEvents(statement.Id);
+
             var oldScoreEvents =
-                statement.ControlEvents
-                .Where(ce => ce.ScoreStatus == ScoreStatus.Retake)
+                controlEvents
+                .Where(ce => ce.ScoreStatus == "пересдана из-за низкого результата")
                 .GroupBy(ce => ce.Name)
                 .Select(group
                     => group
-                        .OrderByDescending(ce => ce.RateDate)
+                        .OrderByDescending(ce => ce.ScoreAddDate)
                         .First());
 
-            foreach (var ce in statement.ControlEvents
+            foreach (var ce in controlEvents
                                 .OrderBy(ce => ce.Number)
-                                .Where(ce => ce.ScoreStatus == ScoreStatus.Ok))
+                                .Where(ce => ce.ScoreStatus == "учитывается в итоговом балле"))
             {
                 controlEventsStr
                     .AppendLine($"{ce.Number}. {ce.Name}")

@@ -1,23 +1,16 @@
 ﻿namespace TelegramBotBARS.Entities
 {
-    public enum ScoreStatus
+    public partial class ControlEvent
     {
-        Empty,
-        Ok,
-        Bad,
-        Retake,
-    }
-    public class ControlEvent
-    {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         public int Number { get; set; }
         public int WeekNumber { get; set; }
         public int Weight { get; set; }
-        public int? Score { get; set; }
-        public DateTime RateDate { get; set; }
-        public ScoreStatus ScoreStatus { get; set; }
-
         public Guid StatementId { get; set; }
-        public Statement Statement { get; set; } = null!;
+        public int Score { get; set; }
+        public string? ScoreStatus { get; set; }
+        public DateTime? ScoreAddDate { get; set; }
+
+        public virtual Statement Statement { get; set; } = null!;
     }
 }

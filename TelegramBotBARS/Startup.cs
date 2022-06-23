@@ -42,7 +42,16 @@ namespace TelegramBotBARS
                 .AddTypedClient<ITelegramBotClient>(httpClient
                     => new TelegramBotClient(BotConfig.Token, httpClient));
 
-            services.AddSingleton<ExcelDataProvider>();
+            services.AddHttpClient("web_api", httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(Configuration
+                    .GetSection("HttpClient")
+                    .GetChildren().First()
+                    .Value);
+            });
+                    
+
+            services.AddScoped<WebApiDataProvider>();
 
             services.AddTransient<CommandExecuteService>();
 

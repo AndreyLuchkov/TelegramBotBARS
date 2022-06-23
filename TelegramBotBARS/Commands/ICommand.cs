@@ -2,6 +2,6 @@
 {
     public interface ICommand
     {
-        public ExecuteResult Execute(string options);
+        public Task<ExecuteResult> ExecuteAsync(string options);
     }
 }

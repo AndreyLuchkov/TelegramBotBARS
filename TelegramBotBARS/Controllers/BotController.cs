@@ -9,7 +9,13 @@ namespace TelegramBotBARS.Controllers
         [HttpPost]
         public async Task<IActionResult> GetUpdate([FromBody]Update update, [FromServices]UpdateHandleService updateHandleService)
         {
-            await updateHandleService.HandleUpdateAsync(update);
+            try
+            {
+                await updateHandleService.HandleUpdateAsync(update);
+            }
+            catch
+            {
+            }
 
             return Ok();
         }

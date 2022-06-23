@@ -7,6 +7,7 @@
         public CommandFactory()
         {
             _commands["/start"] = () => new StartCommand();
+            _commands["/help"] = () => new StartCommand();
             _commands["/km"] = () => new KmCommand();
             _commands[";statement"] = () => new StatementCommand();
             _commands[";semester"] = () => new SemesterCommand();

@@ -1,10 +1,17 @@
 ﻿namespace TelegramBotBARS.Entities
 {
-    public class Student
+    public partial class Student
     {
-        public Guid Id { get; set; }
-        public string Login { get; set; }
+        public Student()
+        {
+            MissedLessonRecords = new HashSet<MissedLessonRecord>();
+            Statements = new HashSet<Statement>();
+        }
 
-        public List<Statement> Statements { get; set; } = new();
+        public Guid Id { get; set; }
+        public string Login { get; set; } = null!;
+
+        public virtual ICollection<MissedLessonRecord> MissedLessonRecords { get; set; }
+        public virtual ICollection<Statement> Statements { get; set; }
     }
 }

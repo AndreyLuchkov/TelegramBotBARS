@@ -4,7 +4,7 @@ namespace TelegramBotBARS.Commands
 {
     public class StartCommand : ICommand
     {
-        public ExecuteResult Execute(string options)
+        public Task<ExecuteResult> ExecuteAsync(string options)
         {
             StringBuilder resultMessage = new StringBuilder("Используйте эти команды, чтобы контролировать бота: \n");
 
@@ -18,11 +18,11 @@ namespace TelegramBotBARS.Commands
             }
             resultMessage.Append("\nС помощью /help можно получить список доступных команд.");
 
-            return new ExecuteResult
+            return Task.FromResult(new ExecuteResult
             {
                 ResultType = ResultType.Text,
                 Message = resultMessage.ToString()
-            };
+            });
         }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using Telegram.Bot.Types.ReplyMarkups;
 
+using static TelegramBotBARS.Commands.CommandUtility;
+
 namespace TelegramBotBARS.Commands
 {
-    public class KmCommand : ExcelDataCommand
+    public class KmCommand : WebApiDataCommand
     {
-        public override ExecuteResult Execute(string options)
+        public override async Task<ExecuteResult> ExecuteAsync(string options)
         {
             var optionsParams = options.Split('&');
             string semester = optionsParams
@@ -12,23 +14,21 @@ namespace TelegramBotBARS.Commands
                 .FirstOrDefault(GetDefaultSemester())
                 .Split('=')
                 .Last();
-            string IAType = optionsParams
-                .Where(param => param.Contains("iaT"))
+            string attestationType = optionsParams
+                .Where(param => param.Contains("type"))
                 .FirstOrDefault("зач")
                 .Split('=')
                 .Last();
 
-            var statements = _dataProvider.GetStatements()
-                .Where(s => s.Semester.Contains(semester))
-                .Where(s => s.IAType.Contains(IAType));
+            var statements = _dataProvider.GetStatements(GetSemesterFullName(semester), attestationType);
 
-            var buttonRows = new List<InlineKeyboardButton[]>(statements.Count());
-            foreach (var statement in statements)
+            var buttonRows = new List<InlineKeyboardButton[]>();
+            foreach (var statement in await statements)
             {
                 buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData($"{statement.Discipline}", $";statement?{statement.Id}") });
             }
 
-            AddSortButtons(buttonRows, IAType, semester);
+            AddSortButtons(buttonRows, attestationType, semester);
             AddSemesterChangeButton(buttonRows);
 
             return new ExecuteResult
@@ -38,42 +38,29 @@ namespace TelegramBotBARS.Commands
                 Result = new InlineKeyboardMarkup(buttonRows)
             };
         }
-        private string GetDefaultSemester()
+        private void AddSortButtons(List<InlineKeyboardButton[]> buttonRows, string attestationType, string semester)
         {
-            DateTime currDate = DateTime.Now;
-
-            if (currDate.Month > 8 || currDate.Month < 2)
-            {
-                return $"{currDate.Year}/{currDate.Year + 1}, О";
-            }
-            else
-            {
-                return $"{currDate.Year - 1}/{currDate.Year}, В";
-            }
-        }
-        private void AddSortButtons(List<InlineKeyboardButton[]> buttonRows, string IAType, string semester)
-        {
-            switch (IAType)
+            switch (attestationType)
             {
                 case "экз":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&iaT=защ"),
-                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&iaT=зач"),
+                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&type=защ"),
+                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&type=зач"),
                     });
                     break;
                 case "защ":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Экзамен", $"/km?sem={semester}&iaT=экз"),
-                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&iaT=зач"),
+                        InlineKeyboardButton.WithCallbackData("<<< Экзамен", $"/km?sem={semester}&type=экз"),
+                        InlineKeyboardButton.WithCallbackData("Зачёт >>>", $"/km?sem={semester}&type=зач"),
                     });
                     break;
                 case "зач":
                     buttonRows.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&iaT=защ"),
-                        InlineKeyboardButton.WithCallbackData("Экзамен >>>", $"/km?sem={semester}&iaT=экз"),
+                        InlineKeyboardButton.WithCallbackData("<<< Защита", $"/km?sem={semester}&type=защ"),
+                        InlineKeyboardButton.WithCallbackData("Экзамен >>>", $"/km?sem={semester}&type=экз"),
                     });
                     break;
 
@@ -82,12 +69,6 @@ namespace TelegramBotBARS.Commands
         private void AddSemesterChangeButton(List<InlineKeyboardButton[]> buttonRows)
         {
             buttonRows.Add(new[] { InlineKeyboardButton.WithCallbackData("Выбрать семестр", ";semester") });
-        }
-        private string GetSemesterFullName(string semester)
-        {
-            return semester.Last() == 'В'
-                ? semester + "есенний семестр"
-                : semester + "сенний семестр";
         }
     }
 }

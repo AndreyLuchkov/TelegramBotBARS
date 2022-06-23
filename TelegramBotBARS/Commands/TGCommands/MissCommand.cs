@@ -2,11 +2,13 @@
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBotBARS.Entities;
 
+using static TelegramBotBARS.Commands.CommandUtility;
+
 namespace TelegramBotBARS.Commands
 {
-    public class MissCommand : ExcelDataCommand
+    public class MissCommand : WebApiDataCommand
     {
-        public override ExecuteResult Execute(string options)
+        public override async Task<ExecuteResult> ExecuteAsync(string options)
         {
             var optionsParams = options.Split('&');
             string semester = optionsParams
@@ -21,19 +23,16 @@ namespace TelegramBotBARS.Commands
                 .Split('=')
                 .Last());
 
-            var missedLessonRecords =
-                _dataProvider.GetStatements()
-                .Where(s => s.Semester.Contains(semester))
-                .SelectMany(s => s.MissedLessonRecords)
-                .OrderByDescending(record => record.LessonDate);
+            var mlRecords = await _dataProvider.GetMLRecords(semester);
 
-            int pageCount = (int)Math.Ceiling(missedLessonRecords.Count() / 5.0);
+            int pageCount = (int)Math.Ceiling(mlRecords.Count() / 5.0);
 
             StringBuilder message = new($"<b>{GetSemesterFullName(semester)}</b>\n");
 
             message
                 .AppendLine("------------------------------------------")
-                .AppendLine(RecordsToString(missedLessonRecords
+                .AppendLine(RecordsToString(mlRecords
+                                                .OrderByDescending(record => record.LessonDate)
                                                 .Skip((page - 1) * 5)
                                                 .Take(5)));
 
@@ -48,19 +47,6 @@ namespace TelegramBotBARS.Commands
                 Result = new InlineKeyboardMarkup(buttonRows)
             };
         }
-        private string GetDefaultSemester()
-        {
-            DateTime currDate = DateTime.Now;
-
-            if (currDate.Month > 8 || currDate.Month < 2)
-            {
-                return $"{currDate.Year}/{currDate.Year + 1}, О";
-            }
-            else
-            {
-                return $"{currDate.Year - 1}/{currDate.Year}, В";
-            }
-        }
         private string RecordsToString(IEnumerable<MissedLessonRecord> records)
         {
             StringBuilder recordsStr = new();
@@ -68,24 +54,18 @@ namespace TelegramBotBARS.Commands
             foreach (var rec in records)
             {
                 recordsStr
-                    .AppendLine($"{rec.LessonType}, {rec.Statement.Discipline}")
+                    .AppendLine($"{rec.LessonType}, {rec.Discipline}")
                     .AppendLine($"{rec.LessonDate.ToString("dd.MM.yy")}, {rec.LessonTime}");
                 
-                if (rec.Reason == "По уважительной причине")
+                if (rec.Reason)
                 {
-                    recordsStr.AppendLine($"<b>{rec.Reason}</b>");
-                }
+                    recordsStr.AppendLine($"<b>По уважительной причине</b>");
+                } 
 
                 recordsStr.AppendLine("------------------------------------------");
             }
 
             return recordsStr.ToString();
-        }
-        private string GetSemesterFullName(string semester)
-        {
-            return semester.Last() == 'В'
-                ? semester + "есенний семестр"
-                : semester + "сенний семестр";
         }
         private void AddPageSwitchButtons(List<InlineKeyboardButton[]> buttonRows, int page, string semester, int pageCount)
         {

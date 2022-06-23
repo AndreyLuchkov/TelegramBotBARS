@@ -1,13 +1,16 @@
 ﻿namespace TelegramBotBARS.Entities
 {
-    public class MissedLessonRecord
+    public partial class MissedLessonRecord
     {
+        public string LessonType { get; set; } = null!;
+        public DateOnly LessonDate { get; set; }
+        public string LessonTime { get; set; } = null!;
+        public bool Reason { get; set; }
+        public string Discipline { get; set; } = null!;
+        public Guid StudentId { get; set; }
         public Guid StatementId { get; set; }
-        public Statement Statement { get; set; } = null!;
 
-        public string LessonType { get; set; }
-        public DateTime LessonDate { get; set; }
-        public string LessonTime { get; set; }
-        public string Reason { get; set; }
+        public virtual Statement Statement { get; set; } = null!;
+        public virtual Student Student { get; set; } = null!;
     }
 }
