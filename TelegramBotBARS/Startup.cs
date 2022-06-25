@@ -49,7 +49,10 @@ namespace TelegramBotBARS
                     .GetChildren().First()
                     .Value);
             });
-                    
+
+            services.AddScoped<AuthenticationService>();
+
+            services.AddScoped<HttpSender>();
 
             services.AddScoped<WebApiDataProvider>();
 

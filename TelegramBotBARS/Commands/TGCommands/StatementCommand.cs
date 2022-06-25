@@ -6,7 +6,7 @@ namespace TelegramBotBARS.Commands
 {
     public class StatementCommand : WebApiDataCommand
     {
-        public override async Task<ExecuteResult> ExecuteAsync(string options)
+        public override async Task<ExecuteResult> Execute(string options)
         {
             var statement = await _dataProvider.GetStatement(new Guid(options));
 

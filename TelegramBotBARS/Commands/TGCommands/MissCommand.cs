@@ -8,7 +8,9 @@ namespace TelegramBotBARS.Commands
 {
     public class MissCommand : WebApiDataCommand
     {
-        public override async Task<ExecuteResult> ExecuteAsync(string options)
+        private const int recordPerPage = 5;
+
+        public override async Task<ExecuteResult> Execute(string options)
         {
             var optionsParams = options.Split('&');
             string semester = optionsParams
@@ -25,7 +27,7 @@ namespace TelegramBotBARS.Commands
 
             var mlRecords = await _dataProvider.GetMLRecords(semester);
 
-            int pageCount = (int)Math.Ceiling(mlRecords.Count() / 5.0);
+            int pageCount = (int)Math.Ceiling(mlRecords.Count() / (double)recordPerPage);
 
             StringBuilder message = new($"<b>{GetSemesterFullName(semester)}</b>\n");
 
@@ -33,7 +35,7 @@ namespace TelegramBotBARS.Commands
                 .AppendLine("------------------------------------------")
                 .AppendLine(RecordsToString(mlRecords
                                                 .OrderByDescending(record => record.LessonDate)
-                                                .Skip((page - 1) * 5)
+                                                .Skip((page - 1) * recordPerPage)
                                                 .Take(5)));
 
             var buttonRows = new List<InlineKeyboardButton[]>();
@@ -49,6 +51,11 @@ namespace TelegramBotBARS.Commands
         }
         private string RecordsToString(IEnumerable<MissedLessonRecord> records)
         {
+            if (records.Count() == 0)
+            {
+                return "Пропущенныйх занятий нет.";
+            }
+
             StringBuilder recordsStr = new();
 
             foreach (var rec in records)
@@ -69,6 +76,11 @@ namespace TelegramBotBARS.Commands
         }
         private void AddPageSwitchButtons(List<InlineKeyboardButton[]> buttonRows, int page, string semester, int pageCount)
         {
+            if (pageCount == 0)
+            {
+                return;
+            }
+
             if (page == 1)
             {
                 buttonRows.Add(new[]

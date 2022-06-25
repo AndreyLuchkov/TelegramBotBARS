@@ -7,14 +7,15 @@ namespace TelegramBotBARS.Controllers
     public class BotController : Controller
     {
         [HttpPost]
-        public async Task<IActionResult> GetUpdate([FromBody]Update update, [FromServices]UpdateHandleService updateHandleService)
+        public async Task<IActionResult> GetUpdate([FromBody] Update update, [FromServices] UpdateHandleService updateHandleService)
         {
             try
             {
                 await updateHandleService.HandleUpdateAsync(update);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine(ex);
             }
 
             return Ok();

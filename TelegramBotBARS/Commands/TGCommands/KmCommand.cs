@@ -6,7 +6,7 @@ namespace TelegramBotBARS.Commands
 {
     public class KmCommand : WebApiDataCommand
     {
-        public override async Task<ExecuteResult> ExecuteAsync(string options)
+        public override async Task<ExecuteResult> Execute(string options)
         {
             var optionsParams = options.Split('&');
             string semester = optionsParams

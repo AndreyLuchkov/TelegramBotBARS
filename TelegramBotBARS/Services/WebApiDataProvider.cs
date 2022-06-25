@@ -1,29 +1,27 @@
 ﻿using System.Web;
-using System.Text.Json;
 using TelegramBotBARS.Entities;
-using TelegramBotBARS.JsonConverters;
 
 namespace TelegramBotBARS.Services
 {
     public class WebApiDataProvider
     {
-        private readonly HttpClient _httpClient;
-        private readonly JsonSerializerOptions _serializerOptions;
+        private readonly HttpSender _httpSender;
 
-        public WebApiDataProvider(IHttpClientFactory httpClientFactory)
+        public WebApiDataProvider(HttpSender httpSender)
         {
-            _httpClient = httpClientFactory.CreateClient("web_api");
-            _serializerOptions = new JsonSerializerOptions();
-
-            _serializerOptions.Converters.Add(new DateOnlyConverter());
+            _httpSender = httpSender;
         }
-        
+
+        public async Task<Statement> GetStatement(Guid statementId)
+        {
+            return await _httpSender
+                .GetAsync<Statement>($"/api/data/statements/{statementId}")
+                ?? new Statement();
+        }
         public async Task<IEnumerable<Statement>> GetStatements()
         {
-            var response = await _httpClient.GetAsync($"/api/data/statements");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<Statement>>(response.Content.ReadAsStream())
+            return await _httpSender
+                .GetAsync<IEnumerable<Statement>>($"/api/data/statements")
                 ?? new List<Statement>();
         }
         public async Task<IEnumerable<Statement>> GetStatements(string semester)
@@ -32,10 +30,8 @@ namespace TelegramBotBARS.Services
 
             query["semester"] = semester;
 
-            var response = await _httpClient.GetAsync($"/api/data/statements?{query}");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<Statement>>(response.Content.ReadAsStream())
+            return await _httpSender
+                .GetAsync<IEnumerable<Statement>>($"/api/data/statements?{query}")
                 ?? new List<Statement>();
         }
         public async Task<IEnumerable<Statement>> GetStatements(string semester, string attestationType) 
@@ -45,19 +41,9 @@ namespace TelegramBotBARS.Services
             query["semester"] = semester;
             query["type"] = attestationType;
 
-            var response = await _httpClient.GetAsync($"/api/data/statements?{query}");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<Statement>>(response.Content.ReadAsStream()) 
+            return await _httpSender
+                .GetAsync<IEnumerable<Statement>>($"/api/data/statements?{query}")
                 ?? new List<Statement>();
-        }
-        public async Task<Statement> GetStatement(Guid statementId)
-        {
-            var response = await _httpClient.GetAsync($"/api/data/statements/{statementId}");
-
-            return JsonSerializer
-                .Deserialize<Statement>(response.Content.ReadAsStream()) 
-                ?? new Statement();
         }
         public async Task<IEnumerable<ControlEvent>> GetControlEvents(Guid statementId)
         {
@@ -65,20 +51,14 @@ namespace TelegramBotBARS.Services
 
             query["statementId"] = statementId.ToString();
 
-            var response = await _httpClient.GetAsync($"/api/data/events?{query}");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<ControlEvent>>(response.Content.ReadAsStream()) 
+            return await _httpSender
+                .GetAsync<IEnumerable<ControlEvent>>($"/api/data/events?{query}")
                 ?? new List<ControlEvent>();
         }
         public async Task<IEnumerable<MissedLessonRecord>> GetMLRecords(Guid statementId)
         {
-            var response = await _httpClient.GetAsync($"/api/data/records/{statementId}");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<MissedLessonRecord>>(
-                    response.Content.ReadAsStream(),
-                    _serializerOptions) 
+            return await _httpSender
+                .GetAsync<IEnumerable<MissedLessonRecord>>($"/api/data/records/{statementId}")
                 ?? new List<MissedLessonRecord>();
         }
         public async Task<IEnumerable<MissedLessonRecord>> GetMLRecords(string semester)
@@ -87,12 +67,8 @@ namespace TelegramBotBARS.Services
 
             query["semester"] = semester;
 
-            var response = await _httpClient.GetAsync($"/api/data/records?{query}");
-
-            return JsonSerializer
-                .Deserialize<IEnumerable<MissedLessonRecord>>(
-                    response.Content.ReadAsStream(),
-                    _serializerOptions)
+            return await _httpSender
+                .GetAsync<IEnumerable<MissedLessonRecord>>($"/api/data/records?{query}")
                 ?? new List<MissedLessonRecord>();
         }
     }

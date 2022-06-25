@@ -5,6 +5,7 @@ namespace TelegramBotBARS.Commands
     public abstract class WebApiDataCommand : IServiceRequiredCommand
     {
         protected WebApiDataProvider _dataProvider = null!;
+        private AuthenticationService _authenticationService = null!;
 
         public IEnumerable<Type> RequiredServicesTypes { get; }
 
@@ -13,6 +14,7 @@ namespace TelegramBotBARS.Commands
             RequiredServicesTypes = new List<Type>
             {
                 typeof(WebApiDataProvider),
+                typeof(AuthenticationService)
             };
         }
 
@@ -22,7 +24,17 @@ namespace TelegramBotBARS.Commands
             {
                 _dataProvider = dataProvider;
             }
+            else if (service is AuthenticationService authenticationService)
+            {
+                _authenticationService = authenticationService;
+            }
         }
-        public abstract Task<ExecuteResult> ExecuteAsync(string options);
+        public async Task<ExecuteResult> ExecuteAsync(string options)
+        {
+            await _authenticationService.LoginAsync();
+
+            return await Execute(options);
+        }
+        public abstract Task<ExecuteResult> Execute(string options);
     }
 }
