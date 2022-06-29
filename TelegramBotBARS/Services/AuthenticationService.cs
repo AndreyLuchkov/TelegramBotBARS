@@ -10,22 +10,17 @@ namespace TelegramBotBARS.Services
         public AuthenticationService(HttpSender httpSender, IConfiguration configuration)
         {
             _httpSender = httpSender;
-            _user = new User
-            {
-                Login = configuration["User:Login"],
-                Password = configuration["User:Password"]
-            };
+            _user = configuration.GetSection("User").Get<User>();
         }
 
-        public async Task LoginAsync()
+        public async Task<string> GetTokenAsync()
         {
             var query = HttpUtility.ParseQueryString(string.Empty);
 
             query["Login"] = _user.Login;
             query["Password"] = _user.Password;
 
-            string token = await _httpSender.PostAsync($"/api/auth/login?{query}");
-            _httpSender.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            return await _httpSender.PostAsync($"/api/auth/login?{query}");
         }
     }
 }

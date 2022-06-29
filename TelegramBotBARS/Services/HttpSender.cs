@@ -26,11 +26,19 @@ namespace TelegramBotBARS.Services
             }
 
             var response = await _httpClient.GetAsync(uri);
+            try
+            {
+                string content = await response.Content.ReadAsStringAsync();
 
-            return JsonSerializer
-                .Deserialize<T>(
-                    response.Content.ReadAsStream(),
-                    _serializerOptions);
+                return JsonSerializer
+                    .Deserialize<T>(
+                        response.Content.ReadAsStream(),
+                        _serializerOptions);
+            }
+            catch
+            {
+                return default;
+            }
         }
         public async Task<string> PostAsync(string uri)
             => await (await _httpClient.PostAsync(uri, null))

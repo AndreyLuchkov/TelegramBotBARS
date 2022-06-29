@@ -44,10 +44,7 @@ namespace TelegramBotBARS
 
             services.AddHttpClient("web_api", httpClient =>
             {
-                httpClient.BaseAddress = new Uri(Configuration
-                    .GetSection("HttpClient")
-                    .GetChildren().First()
-                    .Value);
+                httpClient.BaseAddress = new Uri(Configuration["HttpClient:BaseAddress"]);
             });
 
             services.AddScoped<AuthenticationService>();

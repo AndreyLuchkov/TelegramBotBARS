@@ -12,6 +12,10 @@ namespace TelegramBotBARS.Services
             _httpSender = httpSender;
         }
 
+        public void Login(string token)
+        {
+            _httpSender.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
         public async Task<Statement> GetStatement(Guid statementId)
         {
             return await _httpSender

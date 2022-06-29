@@ -31,7 +31,9 @@ namespace TelegramBotBARS.Commands
         }
         public async Task<ExecuteResult> ExecuteAsync(string options)
         {
-            await _authenticationService.LoginAsync();
+            string token = await _authenticationService.GetTokenAsync();
+
+            _dataProvider.Login(token);
 
             return await Execute(options);
         }
